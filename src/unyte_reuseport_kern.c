@@ -77,7 +77,7 @@ struct {
 
 static inline __u32 rol32(__u32 word, unsigned int shift) { return (word << (shift & 31)) | (word >> ((-shift) & 31)); }
 
-static inline u32 hash(u32 ip_p1, u32 ip_p2, u32 ip_p3, u32 ip_p4) {
+static inline u32 hash(u32 ip_p1) {
   u32 a, b, c, initval, *n;
 
   // Initialize nonce if not done already
@@ -99,7 +99,7 @@ static inline u32 hash(u32 ip_p1, u32 ip_p2, u32 ip_p3, u32 ip_p4) {
   initval = *n;
 
   initval += JHASH_INITVAL + (3 << 2);
-  a = ip_p1 + ip_p2 + ip_p3 + ip_p4 + initval;
+  a = ip_p1 + initval;
   b = initval;
   c = initval;
 
@@ -154,13 +154,10 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
 
   // hash on the IP only
   if(is_ipv4){
-    key = hash(__builtin_bswap32(ip.saddr),0,0,0) % *balancer_count;
+    key = hash(__builtin_bswap32(ip.saddr)) % *balancer_count;
   } else {
     key = hash(
-      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0]),
-      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[1]),
-      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[2]),
-      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[3])
+      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0])
     ) % *balancer_count;
   }
 
