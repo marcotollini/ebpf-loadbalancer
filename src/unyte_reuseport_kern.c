@@ -176,7 +176,8 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   a[2] = 's';
   a[3] = 't';
   a[4] = '\0';
-  bpf_printk(LOC "src: %x, dest: %x, key: %d, %s\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key, a);
+  bpf_printk(LOC "src: %x, dest: %x, key: %d, %s\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
+  bpf_printk(LOC "src: %s\n",a);
 #endif
 
   // side-effect sets dst socket if found
