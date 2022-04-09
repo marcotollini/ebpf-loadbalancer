@@ -107,6 +107,15 @@ static inline u32 hash(u32 ip_p1, u32 ip_p2, u32 ip_p3, u32 ip_p4) {
   return c;
 }
 
+static inline void u32_to_str(u32 ip_p1, u32 ip_p2, u32 ip_p3, u32 ip_p4, int is_ipv4, char * output){
+  int b1 = (ip_p1 >> (8*0)) & 0xff;
+  int b2 = (ip_p1 >> (8*1)) & 0xff;
+  int b3 = (ip_p1 >> (8*2)) & 0xff;
+  int b4 = (ip_p1 >> (8*3)) & 0xff;
+
+  bpf_printk(LOC "1=%d 2=%d 3=%d\n", b1, b2, b3);
+}
+
 // CORE LOGIC
 // sk_reuseport_md: https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/bpf.h#L5655
 // https://git.yoctoproject.org/linux-yocto-contrib/plain/tools/testing/selftests/bpf/progs/test_select_reuseport_kern.c
@@ -160,6 +169,8 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   // hash on the IP only
   if(is_ipv4){
     key = hash(__builtin_bswap32(ip.saddr),0,0,0) % *balancer_count;
+    char * o;
+    u32_to_str(__builtin_bswap32(ip.saddr),0,0,0,is_ipv4, o)
   } else {
     key = hash(
       __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0]),
@@ -170,14 +181,8 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   }
 
 #ifdef _LOG_DEBUG
-  char a[8];
-  a[0] = 't';
-  a[1] = 'e';
-  a[2] = 's';
-  a[3] = 't';
-  a[4] = '\0';
+
   bpf_printk(LOC "src: %x, dest: %x, key: %d, %s\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
-  bpf_printk(LOC "src: %s\n",a);
 #endif
 
   // side-effect sets dst socket if found
