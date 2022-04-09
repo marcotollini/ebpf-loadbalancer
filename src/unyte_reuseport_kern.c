@@ -143,7 +143,7 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
     bpf_printk(LOC "src: %x\n", __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0]));
   }
 
-  u32 ip_hash = __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0]);
+  u32 ip_hash = (u32)ipv6.saddr.in6_u.u6_addr32[0];
 
   const u32 *balancer_count = bpf_map_lookup_elem(&size, &zero);
   if (!balancer_count || *balancer_count == 0) {  // uninitialized by userspace
