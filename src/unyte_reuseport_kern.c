@@ -113,7 +113,10 @@ static inline void u32_to_str(u32 ip_p1, u32 ip_p2, u32 ip_p3, u32 ip_p4, int is
   int b3 = (ip_p1 >> (8*2)) & 0xff;
   int b4 = (ip_p1 >> (8*3)) & 0xff;
 
-  bpf_printk(LOC "1=%d 2=%d 3=%d\n", b1, b2, b3);
+  bpf_printk(LOC "1=%d", b1);
+  bpf_printk(LOC "2=%d", b2);
+  bpf_printk(LOC "3=%d", b3);
+  bpf_printk(LOC "4=%d", b4);
 }
 
 // CORE LOGIC
