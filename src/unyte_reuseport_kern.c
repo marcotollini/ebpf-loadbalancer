@@ -117,6 +117,7 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   struct iphdr ip;
   struct ipv6hdr ipv6;
   __builtin_memset(&ipv6, 0, sizeof(struct ipv6hdr));
+  __builtin_memset(&ip, 0, sizeof(struct iphdr));
 
   u32 key;
   // https://en.wikipedia.org/wiki/EtherType
