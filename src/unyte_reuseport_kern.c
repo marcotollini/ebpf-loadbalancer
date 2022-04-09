@@ -170,7 +170,7 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   }
 
 #ifdef _LOG_DEBUG
-  char a[4];
+  char a[8];
   a[0] = 't';
   a[1] = 'e';
   a[2] = 's';
