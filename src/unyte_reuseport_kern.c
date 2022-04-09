@@ -77,7 +77,7 @@ struct {
 
 static inline __u32 rol32(__u32 word, unsigned int shift) { return (word << (shift & 31)) | (word >> ((-shift) & 31)); }
 
-static inline u32 hash(u32 ip) {
+static inline u32 hash(u32 ip_p1, u32 ip_p2, u32 ip_p3, u32 ip_p4) {
   u32 a, b, c, initval, *n;
 
   // Initialize nonce if not done already
@@ -99,7 +99,7 @@ static inline u32 hash(u32 ip) {
   initval = *n;
 
   initval += JHASH_INITVAL + (3 << 2);
-  a = ip + initval;
+  a = ip_p1 + ip_p2 + ip_p3 + ip_p4 + initval;
   b = initval;
   c = initval;
 
@@ -136,14 +136,10 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
       return SK_DROP;
   }
 
-  bpf_skb_load_bytes_relative(reuse, 0, &ip, sizeof(struct iphdr), (u32)BPF_HDR_START_NET);
-
-  if(!is_ipv4){
-      bpf_skb_load_bytes_relative(reuse, 0, &ipv6, sizeof(struct ipv6hdr), (u32)BPF_HDR_START_NET);
-      bpf_printk(LOC "src: %x ", __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0]));
-      bpf_printk(LOC "%x ", __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[1]));
-      bpf_printk(LOC "%x ", __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[2]));
-      bpf_printk(LOC "%x\n", __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[3]));
+  if(is_ipv4){
+    bpf_skb_load_bytes_relative(reuse, 0, &ip, sizeof(struct iphdr), (u32)BPF_HDR_START_NET);
+  } else {
+    bpf_skb_load_bytes_relative(reuse, 0, &ipv6, sizeof(struct ipv6hdr), (u32)BPF_HDR_START_NET);
   }
 
   const u32 *balancer_count = bpf_map_lookup_elem(&size, &zero);
@@ -157,7 +153,16 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
 #endif
 
   // hash on the IP only
-  key = hash(__builtin_bswap32(ip.saddr)) % *balancer_count;
+  if(is_ipv4){
+    key = hash(__builtin_bswap32(ip.saddr),0,0,0) % *balancer_count;
+  } else {
+    key = hash(
+      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0]),
+      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[1]),
+      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[2]),
+      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[3])
+    ) % *balancer_count;
+  }
 
 #ifdef _LOG_DEBUG
   bpf_printk(LOC "src: %x, dest: %x, key: %d\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
