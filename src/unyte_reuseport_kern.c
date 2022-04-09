@@ -3,7 +3,6 @@
 // clang-format on
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
-#include <stdio.h>
 
 // https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/if_ether.h#L52
 #define ETH_P_IP	0x0800
@@ -108,34 +107,6 @@ static inline u32 hash(u32 ip_p1, u32 ip_p2, u32 ip_p3, u32 ip_p4) {
   return c;
 }
 
-static inline void u32_to_ip(u32 ip_p1, u32 ip_p2, u32 ip_p3, u32 ip_p4, int is_ipv4, char * output){
-  int b1 = (ip_p1 >> (8*0)) & 0xff;
-  int b2 = (ip_p1 >> (8*1)) & 0xff;
-  int b3 = (ip_p1 >> (8*2)) & 0xff;
-  int b4 = (ip_p1 >> (8*3)) & 0xff;
-
-  if(is_ipv4){
-
-    bpf_printk(LOC "1=%s", output);
-
-  } else {
-    int b5 = (ip_p2 >> (8*0)) & 0xff;
-    int b6 = (ip_p2 >> (8*1)) & 0xff;
-    int b7 = (ip_p2 >> (8*2)) & 0xff;
-    int b8 = (ip_p2 >> (8*3)) & 0xff;
-
-    int b9 = (ip_p3 >> (8*0)) & 0xff;
-    int b10 = (ip_p3 >> (8*1)) & 0xff;
-    int b11 = (ip_p3 >> (8*2)) & 0xff;
-    int b12 = (ip_p3 >> (8*3)) & 0xff;
-
-    int b13 = (ip_p4 >> (8*0)) & 0xff;
-    int b14 = (ip_p4 >> (8*1)) & 0xff;
-    int b15 = (ip_p4 >> (8*2)) & 0xff;
-    int b16 = (ip_p4 >> (8*3)) & 0xff;
-  }
-}
-
 // CORE LOGIC
 // sk_reuseport_md: https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/bpf.h#L5655
 // https://git.yoctoproject.org/linux-yocto-contrib/plain/tools/testing/selftests/bpf/progs/test_select_reuseport_kern.c
@@ -146,15 +117,14 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   struct iphdr ip;
   struct ipv6hdr ipv6;
 
+  u32 key;
+  // https://en.wikipedia.org/wiki/EtherType
+  int is_ipv4 = reuse->eth_protocol == bpf_htons(ETH_P_IP);
+  void *targets;
+
   // initialization -- resolve invalid indirect read from the stack (https://stackoverflow.com/questions/71529801/ebpf-bpf-map-update-returns-the-invalid-indirect-read-from-stack-error)
   __builtin_memset(&ipv6, 0, sizeof(struct ipv6hdr));
   __builtin_memset(&ip, 0, sizeof(struct iphdr));
-
-  u32 key;
-  // https://en.wikipedia.org/wiki/EtherType
-  // two B read in the opposite -- 0x0800 -> 0x0008
-  int is_ipv4 = reuse->eth_protocol == bpf_htons(ETH_P_IP);
-  void *targets;
 
   switch (reuse->ip_protocol) {
     case IPPROTO_TCP:
@@ -189,8 +159,6 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   // hash on the IP only
   if(is_ipv4){
     key = hash(__builtin_bswap32(ip.saddr),0,0,0) % *balancer_count;
-    char ip_str[15];
-    u32_to_ip(__builtin_bswap32(ip.saddr),0,0,0,is_ipv4, ip_str);
   } else {
     key = hash(
       __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0]),
@@ -201,8 +169,13 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   }
 
 #ifdef _LOG_DEBUG
-
-  bpf_printk(LOC "src: %x, dest: %x, key: %d, %s\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
+  if(is_ipv4){
+    bpf_printk(LOC "src4: %x, dest4: %x, key: %d\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
+  }else{
+    u64 ip6 = (((u64) __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[1])) << 32) | ((u64) __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0]));
+    bpf_printk(LOC "src");
+    bpf_printk(LOC "src: %x, dest: %x, key: %d\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
+  }
 #endif
 
   // side-effect sets dst socket if found
