@@ -114,8 +114,8 @@ static inline void u32_to_ip(u32 ip_p1, u32 ip_p2, u32 ip_p3, u32 ip_p4, int is_
   int b4 = (ip_p1 >> (8*3)) & 0xff;
 
   if(is_ipv4){
-    sprintf(output, "%d.%d.%d", b1, b2, b3);
-    sprintf(output, "%s.%d", b4);
+    snprintf(output, "%d.%d.%d", b1, b2, b3);
+    snprintf(output, "%s.%d", b4);
 
     bpf_printk(LOC "1=%s", output);
 
