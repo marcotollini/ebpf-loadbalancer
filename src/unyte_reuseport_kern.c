@@ -3,7 +3,6 @@
 // clang-format on
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
-#include <linux/kernel.h>
 
 // https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/if_ether.h#L52
 #define ETH_P_IP	0x0800
@@ -115,8 +114,8 @@ static inline void u32_to_ip(u32 ip_p1, u32 ip_p2, u32 ip_p3, u32 ip_p4, int is_
   int b4 = (ip_p1 >> (8*3)) & 0xff;
 
   if(is_ipv4){
-    snprintf(output, "%d.%d.%d", b1, b2, b3);
-    snprintf(output, "%s.%d", b4);
+    bpf_snprintf(output, "%d.%d.%d", b1, b2, b3);
+    bpf_snprintf(output, "%s.%d", b4);
 
     bpf_printk(LOC "1=%s", output);
 
