@@ -153,12 +153,12 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
 #endif
 
   // hash on the IP only
+  key = hash(__builtin_bswap32(ip.saddr)) % *balancer_count;
   if(is_ipv4){
-    key = hash(__builtin_bswap32(ip.saddr)) % *balancer_count;
   } else {
-    key = hash(
-      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0])
-    ) % *balancer_count;
+    // key = hash(
+    //   __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0])
+    // ) % *balancer_count;
   }
 
 // #ifdef _LOG_DEBUG
