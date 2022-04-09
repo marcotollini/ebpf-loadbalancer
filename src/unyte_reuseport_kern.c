@@ -3,6 +3,7 @@
 // clang-format on
 #include <bpf/bpf_helpers.h>
 #include <bpf/bpf_endian.h>
+#include <linux/kernel.h>
 
 // https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/if_ether.h#L52
 #define ETH_P_IP	0x0800
