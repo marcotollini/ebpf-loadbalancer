@@ -172,7 +172,7 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   if(is_ipv4){
     bpf_printk(LOC "src4: %x, dest4: %x, key: %d\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
   }else{
-    u64 ip6 = (((u64) __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[1])) << 32) | ((u64) __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0]));
+    u128 ip6 = (((u128) __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[1])) << 32) | ((u128) __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0]));
     bpf_printk(LOC "src");
     bpf_printk(LOC "src: %x, dest: %x, key: %d\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
   }
