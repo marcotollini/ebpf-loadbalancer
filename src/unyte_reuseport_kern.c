@@ -140,7 +140,7 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
 
   if(!is_ipv4){
       bpf_skb_load_bytes_relative(reuse, 0, &ipv6, sizeof(struct ipv6hdr), (u32)BPF_HDR_START_NET);
-      bpf_printk(LOC "src: %x %x %x %x\n", __builtin_bswap32(ipv6.saddr.s6_addr[0]), __builtin_bswap32(ipv6.saddr.s6_addr[1]), __builtin_bswap32(ipv6.saddr.s6_addr[2]), __builtin_bswap32(ipv6.saddr.s6_addr[3]));
+      bpf_printk(LOC "src: %x %x %x %x\n", __builtin_bswap32(ipv6.saddr->s6_addr[0]), __builtin_bswap32(ipv6.saddr->s6_addr[1]), __builtin_bswap32(ipv6.saddr->s6_addr[2]), __builtin_bswap32(ipv6.saddr->s6_addr[3]));
   }
 
   const u32 *balancer_count = bpf_map_lookup_elem(&size, &zero);
