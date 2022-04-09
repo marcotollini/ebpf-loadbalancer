@@ -113,9 +113,9 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   u32 key;
   // https://en.wikipedia.org/wiki/EtherType
   // two B read in the opposite -- 0x0800 -> 0x0008
-  int is_ipv4 = reuse->eth_protocol == 0x0008;
+  int is_ipv4 = reuse->eth_protocol == bpf_htons(ETH_P_IP);
 #ifdef _LOG_DEBUG
-  bpf_printk(LOC "IS IPV4=%d\n", reuse->eth_protocol, is_ipv4);
+  bpf_printk(LOC "IS IPV4=%d\n", is_ipv4);
 #endif
 
   void *targets;
