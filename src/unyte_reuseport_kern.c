@@ -153,7 +153,7 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   bpf_printk(LOC "Balancing across %d hash buckets\n", *balancer_count);
 #endif
 
-  u32 ip_hash = __builtin_bswap32(ip.saddr);
+  u32 ip_hash = __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0]);
 
   // hash on the IP only
   key = hash(ip_hash) % *balancer_count;
