@@ -12,6 +12,10 @@
 #define MAX_BALANCER_COUNT 128
 #endif
 
+#ifndef offsetof
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
+
 // bpf_printk argument limits
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
@@ -109,11 +113,16 @@ static inline u32 hash(u32 ip) {
 
 // CORE LOGIC
 // sk_reuseport_md: https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/bpf.h#L5655
+// https://git.yoctoproject.org/linux-yocto-contrib/plain/tools/testing/selftests/bpf/progs/test_select_reuseport_kern.c
+
 SEC("sk_reuseport/selector")
 enum sk_action _selector(struct sk_reuseport_md *reuse) {
   enum sk_action action;
   struct iphdr ip;
   struct ipv6hdr ipv6;
+
+  // __u32 skb_addrs[8];
+
   u32 key;
   // https://en.wikipedia.org/wiki/EtherType
   // two B read in the opposite -- 0x0800 -> 0x0008
@@ -140,6 +149,9 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
 
   bpf_skb_load_bytes_relative(reuse, 0, &ip, sizeof(struct iphdr), (u32)BPF_HDR_START_NET);
 
+  if(!is_ipv4){
+      bpf_skb_load_bytes_relative(reuse, 0, &ipv6, sizeof(struct ipv6hdr), (u32)BPF_HDR_START_NET);
+  }
 
   const u32 *balancer_count = bpf_map_lookup_elem(&size, &zero);
   if (!balancer_count || *balancer_count == 0) {  // uninitialized by userspace
