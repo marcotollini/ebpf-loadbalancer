@@ -156,10 +156,14 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   key = hash(__builtin_bswap32(ip.saddr)) % *balancer_count;
   if(is_ipv4){
   } else {
-    // key = hash(
-    //   __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0])
-    // ) % *balancer_count;
+    key = hash(
+      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0])
+    ) % *balancer_count;
   }
+
+  #ifdef _LOG_DEBUG
+  bpf_printk(LOC "key: %d\n", key);
+  #endif
 
 // #ifdef _LOG_DEBUG
 //   bpf_printk(LOC "src: %x, dest: %x, key: %d\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
