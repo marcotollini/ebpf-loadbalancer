@@ -116,6 +116,8 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   enum sk_action action;
   struct iphdr ip;
   struct ipv6hdr ipv6;
+
+  // initialization -- resolve invalid indirect read from the stack (https://stackoverflow.com/questions/71529801/ebpf-bpf-map-update-returns-the-invalid-indirect-read-from-stack-error)
   __builtin_memset(&ipv6, 0, sizeof(struct ipv6hdr));
   __builtin_memset(&ip, 0, sizeof(struct iphdr));
 
@@ -168,7 +170,7 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   }
 
 #ifdef _LOG_DEBUG
-  bpf_printk(LOC "src: %x, dest: %x, key: %d\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
+  bpf_printk(LOC "src: %x, dest: %x, key: %d, %s\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key, ['t', 'e', 's', 't']);
 #endif
 
   // side-effect sets dst socket if found
