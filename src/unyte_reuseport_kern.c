@@ -12,6 +12,11 @@
 #define MAX_BALANCER_COUNT 128
 #endif
 
+#ifndef offsetof
+// https://git.yoctoproject.org/linux-yocto-contrib/plain/tools/testing/selftests/bpf/progs/test_select_reuseport_kern.c
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
+
 // bpf_printk argument limits
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
@@ -116,7 +121,7 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   enum sk_action action;
   struct iphdr ip;
   struct ipv6hdr ipv6;
-  __builtin_memset(&ipv6, 0, sizeof(struct ipv6hdr));
+  u32 skb_addrs[8]; // saddr, daddr
 
   u32 key;
   // https://en.wikipedia.org/wiki/EtherType
@@ -141,7 +146,7 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   if(is_ipv4){
     bpf_skb_load_bytes_relative(reuse, 0, &ip, sizeof(struct iphdr), (u32)BPF_HDR_START_NET);
   } else {
-    bpf_skb_load_bytes_relative(reuse, 0, &ipv6, sizeof(struct ipv6hdr), (u32)BPF_HDR_START_NET);
+    bpf_skb_load_bytes_relative(reuse, offsetof(struct ipv6hdr, saddr), skb_addrs, 32, BPF_HDR_START_NET);
   }
 
   const u32 *balancer_count = bpf_map_lookup_elem(&size, &zero);
@@ -159,16 +164,16 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
     key = hash(__builtin_bswap32(ip.saddr),0,0,0) % *balancer_count;
   } else {
     key = hash(
-      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0]),
-      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[1]),
-      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[2]),
-      __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[3])
+      __builtin_bswap32(skb_addrs[0]),
+      __builtin_bswap32(skb_addrs[1]),
+      __builtin_bswap32(skb_addrs[2]),
+      __builtin_bswap32(skb_addrs[3])
     ) % *balancer_count;
   }
 
-#ifdef _LOG_DEBUG
-  bpf_printk(LOC "src: %x, dest: %x, key: %d\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
-#endif
+// #ifdef _LOG_DEBUG
+//   bpf_printk(LOC "src: %x, dest: %x, key: %d\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
+// #endif
 
   // side-effect sets dst socket if found
   if (bpf_sk_select_reuseport(reuse, targets, &key, 0) == 0) {
