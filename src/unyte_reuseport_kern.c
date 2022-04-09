@@ -107,16 +107,33 @@ static inline u32 hash(u32 ip_p1, u32 ip_p2, u32 ip_p3, u32 ip_p4) {
   return c;
 }
 
-static inline void u32_to_str(u32 ip_p1, u32 ip_p2, u32 ip_p3, u32 ip_p4, int is_ipv4, char * output){
+static inline void u32_to_ip(u32 ip_p1, u32 ip_p2, u32 ip_p3, u32 ip_p4, int is_ipv4, char * output){
   int b1 = (ip_p1 >> (8*0)) & 0xff;
   int b2 = (ip_p1 >> (8*1)) & 0xff;
   int b3 = (ip_p1 >> (8*2)) & 0xff;
   int b4 = (ip_p1 >> (8*3)) & 0xff;
 
-  bpf_printk(LOC "1=%d", b1);
-  bpf_printk(LOC "2=%d", b2);
-  bpf_printk(LOC "3=%d", b3);
-  bpf_printk(LOC "4=%d", b4);
+  if(is_ipv4){
+    sprintf(output, "%d.%d.%d.%d", b1, b2, b3, b4)
+
+    bpf_printk(LOC "1=%s", output);
+
+  } else {
+    int b5 = (ip_p2 >> (8*0)) & 0xff;
+    int b6 = (ip_p2 >> (8*1)) & 0xff;
+    int b7 = (ip_p2 >> (8*2)) & 0xff;
+    int b8 = (ip_p2 >> (8*3)) & 0xff;
+
+    int b9 = (ip_p3 >> (8*0)) & 0xff;
+    int b10 = (ip_p3 >> (8*1)) & 0xff;
+    int b11 = (ip_p3 >> (8*2)) & 0xff;
+    int b12 = (ip_p3 >> (8*3)) & 0xff;
+
+    int b13 = (ip_p4 >> (8*0)) & 0xff;
+    int b14 = (ip_p4 >> (8*1)) & 0xff;
+    int b15 = (ip_p4 >> (8*2)) & 0xff;
+    int b16 = (ip_p4 >> (8*3)) & 0xff;
+  }
 }
 
 // CORE LOGIC
@@ -172,8 +189,8 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   // hash on the IP only
   if(is_ipv4){
     key = hash(__builtin_bswap32(ip.saddr),0,0,0) % *balancer_count;
-    char * o = 0;
-    u32_to_str(__builtin_bswap32(ip.saddr),0,0,0,is_ipv4, o);
+    char ip_str[15];
+    u32_to_ip(__builtin_bswap32(ip.saddr),0,0,0,is_ipv4, ip_str);
   } else {
     key = hash(
       __builtin_bswap32(ipv6.saddr.in6_u.u6_addr32[0]),
