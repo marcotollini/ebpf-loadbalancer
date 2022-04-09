@@ -2,6 +2,10 @@
 #include "vmlinux.h"
 // clang-format on
 #include <bpf/bpf_helpers.h>
+#include <bpf/bpf_endian.h>
+
+// https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/if_ether.h#L52
+#define ETH_P_IP	0x0800
 
 #ifndef MAX_BALANCER_COUNT
 // Keep in sync with _user.c
