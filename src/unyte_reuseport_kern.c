@@ -136,8 +136,8 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
       return SK_DROP;
   }
 
+  bpf_skb_load_bytes_relative(reuse, 0, &ip, sizeof(struct iphdr), (u32)BPF_HDR_START_NET);
   if(is_ipv4){
-    bpf_skb_load_bytes_relative(reuse, 0, &ip, sizeof(struct iphdr), (u32)BPF_HDR_START_NET);
   } else {
     bpf_skb_load_bytes_relative(reuse, 0, &ipv6, sizeof(struct ipv6hdr), (u32)BPF_HDR_START_NET);
   }
@@ -161,9 +161,9 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
     ) % *balancer_count;
   }
 
-#ifdef _LOG_DEBUG
-  bpf_printk(LOC "src: %x, dest: %x, key: %d\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
-#endif
+// #ifdef _LOG_DEBUG
+//   bpf_printk(LOC "src: %x, dest: %x, key: %d\n", __builtin_bswap32(ip.saddr), __builtin_bswap32(ip.daddr), key);
+// #endif
 
   // side-effect sets dst socket if found
   if (bpf_sk_select_reuseport(reuse, targets, &key, 0) == 0) {
