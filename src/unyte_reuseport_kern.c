@@ -169,7 +169,7 @@ enum sk_action _selector(struct sk_reuseport_md *reuse) {
   // hash on the IP only
   if(is_ipv4){
     key = hash(__builtin_bswap32(ip.saddr),0,0,0) % *balancer_count;
-    char * o;
+    char * o = 0;
     u32_to_str(__builtin_bswap32(ip.saddr),0,0,0,is_ipv4, o);
   } else {
     key = hash(
